@@ -1,0 +1,7 @@
+{
+  "name": "Oceanic Mirror AR",
+  "description": "An immersive AR aquarium where virtual marine life interacts with you in real-time using computer vision and spatial occlusion.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
