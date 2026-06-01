@@ -117,18 +117,31 @@ export default function ARView() {
     // Background music and mode transition control
     useEffect(() => {
       const audio = audioRef.current;
-      if (!audio) return;
+      if (!audio || !isStarted) return;
 
       const normalMusic = "https://raw.githubusercontent.com/lucaibing/-/main/%E6%B5%B7%E9%B8%A5%E5%8F%AB.mp3";
       const deepSeaMusic = "https://raw.githubusercontent.com/lucaibing/-/main/%E9%9F%B3%E9%A2%91-3%E5%88%8625%E7%A7%92.mp3";
+
+      const playAudio = () => {
+        audio.volume = 0.3;
+        audio.play().catch(e => {
+          if (e.name !== 'AbortError') {
+            console.error("Audio play failed:", e);
+          }
+        });
+      };
 
       if (arState.mode === 'normal') {
         if (audio.src !== normalMusic) {
           audio.src = normalMusic;
           audio.load();
+          audio.oncanplaythrough = () => {
+            playAudio();
+            audio.oncanplaythrough = null;
+          };
+        } else {
+          playAudio();
         }
-        audio.volume = 0.3;
-        audio.play().catch(e => console.error("Audio play failed:", e));
       } else if (arState.mode === 'deep-sea' || arState.mode === 'abyssal') {
         // Clear trash when entering deep-sea or abyssal mode
         trashRef.current = [];
@@ -136,14 +149,22 @@ export default function ARView() {
         if (audio.src !== deepSeaMusic) {
           audio.src = deepSeaMusic;
           audio.load();
+          audio.oncanplaythrough = () => {
+            playAudio();
+            audio.oncanplaythrough = null;
+          };
+        } else {
+          playAudio();
         }
-        audio.volume = 0.3;
-        audio.play().catch(e => console.error("Audio play failed:", e));
       } else {
         audio.pause();
         audio.currentTime = 0;
       }
-    }, [arState.mode]);
+
+      return () => {
+        audio.oncanplaythrough = null;
+      };
+    }, [arState.mode, isStarted]);
 
   const arStateRef = useRef<ARState>(arState);
   
@@ -3922,6 +3943,10 @@ export default function ARView() {
               onClick={() => {
                 setCameraError(null);
                 setIsStarted(true);
+                // Explicitly play audio to satisfy browser autoplay policy on user interaction
+                if (audioRef.current) {
+                  audioRef.current.play().catch(e => console.error("Initial audio play failed:", e));
+                }
               }}
               className="w-full py-4 bg-blue-500 hover:bg-blue-400 text-white rounded-xl font-medium transition-colors mt-2"
             >
